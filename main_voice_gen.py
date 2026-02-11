@@ -11,9 +11,11 @@ model = Qwen3TTSModel.from_pretrained(
 
 
 speakers =["Sohee", "Aiden", "Dylan", "Eric", "Ono_anna", "Ryan", "Serena", "Uncle_fu", "Vivian"]
+instruct = "따뜻하고 친근한 어조로"
+
 
 target_text = "안녕하세요, Qwen3-TTS로 생성한 한국어 음성입니다."
-instruct = "따뜻하고 친근한 어조로"
+
 
 wavs, sr = model.generate_custom_voice(
     text=target_text,
@@ -22,3 +24,23 @@ wavs, sr = model.generate_custom_voice(
     instruct=instruct,
 )
 sf.write("output_gen.wav", wavs[0], sr)
+
+
+
+
+# -------------------------
+
+# batch inference도 가능 
+
+# # batch inference
+# wavs, sr = model.generate_custom_voice(
+#     text=[
+#         "其实我真的有发现，我是一个特别善于观察别人情绪的人。", 
+#         "She said she would be here by noon."
+#     ],
+#     language=["Chinese", "English"],
+#     speaker=["Vivian", "Ryan"],
+#     instruct=["", "Very happy."]
+# )
+# sf.write("output_custom_voice_1.wav", wavs[0], sr)
+# sf.write("output_custom_voice_2.wav", wavs[1], sr)
