@@ -6,11 +6,24 @@ model = Qwen3TTSModel.from_pretrained(
     "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
     device_map="cuda:0",
     dtype=torch.bfloat16,
-    attn_implementation="flash_attention_2",
+    attn_implementation="sdpa"            # "flash_attention_2",
 )
 
 
-speakers =["Sohee", "Aiden", "Dylan", "Eric", "Ono_anna", "Ryan", "Serena", "Uncle_fu", "Vivian"]
+"""
+Sohee:          한국어 
+Ryan:           영어 
+Aiden:          영어 
+Ono_Anna:       일본어 
+Vivian:         중국어
+Serena:         중국어
+Uncle_Fu:       중국어
+Dylan:          중국어
+Eric:           중국어
+"""
+
+
+speakers =["Sohee", "Ryan", "Aiden", "Ono_Anna", "Vivian", "Serena", "Uncle_Fu", "Dylan", "Eric"]
 instruct = "따뜻하고 친근한 어조로"
 
 
