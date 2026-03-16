@@ -73,10 +73,10 @@ speakers = args.speakers if args.speakers else ALL_SPEAKERS
 script_dir = "dataset/scripts"
 script_files = sorted([f for f in os.listdir(script_dir) if f.endswith(".txt")])
 
-script_files = ['ANGRY.txt', 'DISGUSTED.txt', 'FEARFUL.txt', 'HAPPY.txt', 'SAD.txt', 'SURPRISED.txt', 'NEUTRAL.txt']
+# script_files = ['ANGRY.txt', 'DISGUSTED.txt', 'FEARFUL.txt', 'HAPPY.txt', 'SAD.txt', 'SURPRISED.txt', 'NEUTRAL.txt']
 print(script_files)
 
-BATCH_SIZE = 32
+BATCH_SIZE = 128
 SEED = 21
 
 for speaker in speakers:

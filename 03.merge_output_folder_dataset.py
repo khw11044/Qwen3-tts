@@ -12,7 +12,7 @@ for emotion_dir in sorted(emotion_dirs):
     dest_emotion_dir = WAV_DATASET_DIR / emotion_dir.name
     dest_emotion_dir.mkdir(parents=True, exist_ok=True)
 
-    wav_files = list(emotion_dir.rglob("*.wav"))
+    wav_files = [f for f in emotion_dir.rglob("*.wav") if ".ipynb_checkpoints" not in f.parts]
     print(f"\n[{emotion_dir.name}] {len(wav_files)}개 복사 중...")
 
     for wav_file in sorted(wav_files):
