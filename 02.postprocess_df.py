@@ -85,11 +85,12 @@ def worker(gpu_id, worker_id, entries):
             saver_pool.submit(save_audio_worker, dst_path, enhanced, sr)
             processed += 1
         except Exception as e:
-            print(f"[Worker {gpu_id}-{worker_id}] Error {os.path.basename(src_p>
+            print(f"[Worker {gpu_id}-{worker_id}] Error {os.path.basename(src_path)}: {e}")
 
     saver_pool.shutdown(wait=True)
     elapsed = time.time() - worker_start
-    print(f"[Worker {gpu_id}-{worker_id}] Done. Processed: {processed}, Skipped>
+    print(f"[Worker {gpu_id}-{worker_id}] Done. Processed: {processed}, Skipped: {skipped} ({elapsed:.1f}s)")
+
 
 if __name__ == "__main__":
     start_time = time.time()
@@ -123,7 +124,7 @@ if __name__ == "__main__":
     # Split work across workers
     total_workers = NUM_GPUS * WORKERS_PER_GPU
     chunk_size = total_files // total_workers + 1
-    chunks = [entries[i:i + chunk_size] for i in range(0, total_files, chunk_si>
+    chunks = [entries[i:i + chunk_size] for i in range(0, total_files, chunk_size)]
 
     print(f"Launching {total_workers} workers ({WORKERS_PER_GPU} per GPU)...")
 
@@ -142,4 +143,3 @@ if __name__ == "__main__":
 
     elapsed_min = (time.time() - start_time) / 60
     print(f"\nDone. Total: {total_files} files in {elapsed_min:.1f} min")
-

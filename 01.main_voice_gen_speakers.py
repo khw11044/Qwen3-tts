@@ -67,12 +67,13 @@ Emotion_prompt_maps = {
 
 
 ALL_SPEAKERS = ["Sohee", "Ono_Anna", "Vivian", "Uncle_Fu", "Eric"]
+# ALL_SPEAKERS = ["Sohee", "Ono_Anna"]
 speakers = args.speakers if args.speakers else ALL_SPEAKERS
 
 script_dir = "dataset/scripts"
 script_files = sorted([f for f in os.listdir(script_dir) if f.endswith(".txt")])
 
-script_files = ['NEUTRAL.txt']
+script_files = ['ANGRY.txt', 'DISGUSTED.txt', 'FEARFUL.txt', 'HAPPY.txt', 'SAD.txt', 'SURPRISED.txt', 'NEUTRAL.txt']
 print(script_files)
 
 BATCH_SIZE = 32
