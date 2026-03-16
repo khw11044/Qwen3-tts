@@ -1,13 +1,19 @@
 import os
+import argparse
 import torch
 import soundfile as sf
 from qwen_tts import Qwen3TTSModel
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--gpu", type=int, default=0, help="GPU device index (default: 0)")
+parser.add_argument("--speakers", nargs="+", default=None, help="Speakers to process (default: all)")
+args = parser.parse_args()
+
 model = Qwen3TTSModel.from_pretrained(
     "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
-    device_map="cuda:0",
+    device_map=f"cuda:{args.gpu}",
     dtype=torch.bfloat16,
-    attn_implementation="flash_attention_2"            # "flash_attention_2",
+    attn_implementation="flash_attention_2"   #"sdpa"            # "flash_attention_2",
 )
 
 
@@ -60,49 +66,69 @@ Emotion_prompt_maps = {
 }
 
 
-speakers = ["Sohee", "Ryan", "Aiden", "Ono_Anna", "Vivian", "Serena", "Uncle_Fu", "Dylan", "Eric"]
+ALL_SPEAKERS = ["Sohee", "Ono_Anna", "Vivian", "Uncle_Fu", "Eric"]
+speakers = args.speakers if args.speakers else ALL_SPEAKERS
 
+script_dir = "dataset/scripts"
+script_files = sorted([f for f in os.listdir(script_dir) if f.endswith(".txt")])
 
-speakers = ["Sohee", "Ono_Anna", "Vivian", "Uncle_Fu", "Eric"]
+script_files = ['NEUTRAL.txt']
+print(script_files)
 
-speaker_idx = 0
-# 대본 파일 읽기
-script_file = "dataset/scripts/NEUTRAL.txt"
-emotion = os.path.basename(script_file).replace(".txt", "")  # "ANGRY"
-instruct = Emotion_prompt_maps[emotion]
+BATCH_SIZE = 32
+SEED = 21
 
-with open(script_file, "r", encoding="utf-8") as f:
-    lines = [line.strip() for line in f.readlines() if line.strip()]
+for speaker in speakers:
+    for script_file in script_files:
+        emotion = script_file.replace(".txt", "")
+        instruct = Emotion_prompt_maps[emotion]
 
-# 출력 디렉토리 생성
-output_dir = f"output/{emotion}/{speakers[speaker_idx]}"
-os.makedirs(output_dir, exist_ok=True)
+        with open(os.path.join(script_dir, script_file), "r", encoding="utf-8") as f:
+            lines = [line.strip() for line in f.readlines() if line.strip()]
 
-# batch inference (batch_size=8)
-BATCH_SIZE = 8
-SEED = 42
-total = len(lines[:16])
-idx = 0
+        output_dir = f"output/{emotion}/{speaker}"
+        os.makedirs(output_dir, exist_ok=True)
 
-for batch_start in range(0, total, BATCH_SIZE):
-    batch_lines = lines[batch_start:batch_start + BATCH_SIZE]
-    batch_size = len(batch_lines)
+        total = len(lines)
+        idx = 0
 
-    print(f"[{batch_start}/{total}] Generating batch ({batch_size} lines)...")
+        print(f"\n=== Speaker: {speaker} | Emotion: {emotion} | Lines: {total} ===")
 
-    torch.manual_seed(SEED)
-    torch.cuda.manual_seed_all(SEED)
+        for batch_start in range(0, total, BATCH_SIZE):
+            batch_lines = lines[batch_start:batch_start + BATCH_SIZE]
+            batch_size = len(batch_lines)
 
-    wavs, sr = model.generate_custom_voice(
-        text=batch_lines,
-        language=["Korean"] * batch_size,
-        speaker=[speakers[speaker_idx]] * batch_size,
-        instruct=[instruct] * batch_size,
-    )
+            # Check if all files in this batch already exist
+            all_exist = all(
+                os.path.exists(f"{output_dir}/{emotion}_{speaker}_{batch_start + i:03d}.wav")
+                for i in range(batch_size)
+            )
+            if all_exist:
+                print(f"  [{batch_start}/{total}] Skipping batch ({batch_size} lines, already exist)")
+                idx += batch_size
+                continue
 
-    for wav in wavs:
-        sf.write(f"{output_dir}/{emotion}_{idx:03d}.wav", wav, sr)
-        print(f"  Saved: {output_dir}/{emotion}_{idx:03d}.wav")
-        idx += 1
+            print(f"  [{batch_start}/{total}] Generating batch ({batch_size} lines)...")
 
-print(f"Done! {idx} files saved to {output_dir}/")
+            torch.manual_seed(SEED)
+            torch.cuda.manual_seed_all(SEED)
+
+            wavs, sr = model.generate_custom_voice(
+                text=batch_lines,
+                language=["Korean"] * batch_size,
+                speaker=[speaker] * batch_size,
+                instruct=[instruct] * batch_size,
+            )
+
+            for wav in wavs:
+                output_path = f"{output_dir}/{emotion}_{speaker}_{idx:03d}.wav"
+                if not os.path.exists(output_path):
+                    sf.write(output_path, wav, sr)
+                    print(f"    Saved: {output_path}")
+                else:
+                    print(f"    Skipped (exists): {output_path}")
+                idx += 1
+
+        print(f"  Done! {idx} files saved to {output_dir}/")
+
+print("\nAll done!")
